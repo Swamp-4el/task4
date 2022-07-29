@@ -1,0 +1,111 @@
+﻿@model UsersViewModel
+
+@{
+    ViewData["Title"] = "Users";
+
+    string GetStatusColor(string status)
+    {
+        if (status == UserStatus.Active)
+            return "table-success";
+
+        if (status == UserStatus.Blocked)
+            return "table-warning";
+
+        return "table-danger";
+    }
+}
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="row form-group">
+            <h2 class="col-md-9 mx-auto text-center">Users</h2>
+        </div>
+
+        <div class="form-group">
+            <div class="progress form-group">
+                <div class="progress-bar bg-warning" role="progressbar"
+                     style="width: @Model.BlockedProcent" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-success" role="progressbar"
+                     style="width: @Model.ActivityProcent" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-danger" role="progressbar"
+                     style="width: @Model.DeleteProcent" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <form asp-controller="Users">
+            <div class="form-group">
+                <div class="row">
+                    <div class="btn-group mx-auto col-md-12" role="group" aria-label="Basic example">
+                        <input type="submit" class="btn btn-warning text-break" asp-action="BlockUsers" value="Block users" />
+                        <input type="submit" class="btn btn-success text-break" asp-action="ActivateUsers" value="Activate users" />
+                        <input type="submit" class="btn btn-danger text-break" asp-action="DeleteUsers" value="Delete users" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="mx-auto">
+                    <table class="table">
+                        <thead>
+                            <tr class="table-active">
+                                <th scope="col">
+                                    <div class="form-check">
+                                        <input class="form-check-input all-select" type="checkbox" id="defaultCheck1">
+                                        <label class="form-check-label" for="defaultCheck1">All</label>
+                                    </div>
+                                </th>
+                                <th scope="col">Id</th>
+                                <th scope="col" class="text-break">User name</th>
+                                <th scope="col" class="text-break">Email</th>
+                                <th scope="col" class="text-break">Date create</th>
+                                <th scope="col" class="text-break">Last login</th>
+                                <th scope="col" class="text-break">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Users.Count; ++i)
+                            {
+                                <tr class="@GetStatusColor(Model.Users[i].Status)">
+                                    <td>
+                                        @if (Model.Users[i].Status != UserStatus.Delete)
+                                        {
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input user-select" id="@i" asp-for="@Model.Users[i].IsSelected">
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <input type="text" asp-for="@Model.Users[i].Id" hidden />
+                                        <p class="text-break">@Model.Users[i].Id</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-break">@Model.Users[i].UserName</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-break">@Model.Users[i].Email</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-break">@Model.Users[i].CreateDate.ToString("d")</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-break">@Model.Users[i].LastLogin.ToString("d")</p>
+                                    </td>
+                                    <td>
+                                        <input type="text" asp-for="@Model.Users[i].Status" hidden />
+                                        <p class="text-break">@Model.Users[i].Status</p>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="~/js/selectDeselectAllUsers.js"></script>
+
+@section Scripts{
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
