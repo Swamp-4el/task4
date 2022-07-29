@@ -57,6 +57,7 @@ namespace task4.Controllers
             {
                 await Authenticate(model.UserName);
                 user.LastLogin = DateTime.Now;
+                await _dbContext.SaveChangesAsync();
 
                 return RedirectToAction("Index", "Users");
             }
