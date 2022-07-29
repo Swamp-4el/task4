@@ -13,63 +13,70 @@ using task4.Models.DBModels;
 namespace task4.Controllers
 {
     [Authorize]
-	public class UsersController : Controller
-	{
+    public class UsersController : Controller
+    {
         private readonly Task4Context _dbContext;
         
-		public UsersController(Task4Context dbContext)
+        public UsersController(Task4Context dbContext)
         {
-			_dbContext = dbContext;
-		}
+            _dbContext = dbContext;
+        }
 
-		[HttpGet]
-		public async Task<IActionResult> Index()
-		{
-			if (!IsUserActive())
-				return RedirectToAction("Logout", "Account");
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            if (!IsUserActive())
+            return RedirectToAction("Logout", "Account");
 
-			var model = new UsersViewModel();
+            var model = new UsersViewModel();
 
-			model.Users = await _dbContext.Users
-				.Select(u => new UserInfo
-				{
-					UserName = u.UserName,
-					Email = u.Email,
-					Status = UserStatus.GetStatus(u.IsBlocked, u.IsDelete),
-					IsSelected = false,
+            model.Users = await _dbContext.Users
+                .Select(u => new UserInfo
+                {
+                    UserName = u.UserName,
+                    Email = u.Email,
+                    Status = UserStatus.GetStatus(u.IsBlocked, u.IsDelete),
+                    IsSelected = false,
                     CreateDate = u.CreateDate,
                     LastLogin = u.LastLogin,
                     Id = u.Id,
-				})
-				.ToListAsync();
+                })
+                .ToListAsync();
 
-			var allCountUsers = _dbContext.Users.Count();
-			var activityCount = model.Users.Where(u => u.Status == UserStatus.Active).Count();
-			var blockedCount = model.Users.Where(u => u.Status == UserStatus.Blocked).Count();
+            model = AddProcentsToModel(model);
 
-			model.ActivityProcent = GetProcent(activityCount, allCountUsers);
-			model.BlockedProcent = GetProcent(blockedCount, allCountUsers);
-			model.DeleteProcent = GetProcent(allCountUsers - activityCount - blockedCount, allCountUsers);
+            return View(model);
+        }
 
-			return View(model);
-		}
-
-		[HttpPost]
-		public async Task<IActionResult> BlockUsers(UsersViewModel model)
+        [HttpPost]
+        public async Task<IActionResult> BlockUsers(UsersViewModel model)
         {
             return await ActionOnUsers(model, BlockUserAndPossibleDisconnect);
         }
 
         [HttpPost]
-		public async Task<IActionResult> ActivateUsers(UsersViewModel model)
-		{
+        public async Task<IActionResult> ActivateUsers(UsersViewModel model)
+        {
             return await ActionOnUsers(model, ActivateUserAndNotDisconnet);
         }
 
-		[HttpPost]
-		public async Task<IActionResult> DeleteUsers(UsersViewModel model)
-		{
+        [HttpPost]
+        public async Task<IActionResult> DeleteUsers(UsersViewModel model)
+        {
             return await ActionOnUsers(model, DeleteUserAndPossibleDisconnect);
+        }
+
+        private UsersViewModel AddProcentsToModel(UsersViewModel model)
+        {
+            var allCountUsers = _dbContext.Users.Count();
+            var activityCount = model.Users.Where(u => u.Status == UserStatus.Active).Count();
+            var blockedCount = model.Users.Where(u => u.Status == UserStatus.Blocked).Count();
+
+            model.ActivityProcent = GetProcent(activityCount, allCountUsers);
+            model.BlockedProcent = GetProcent(blockedCount, allCountUsers);
+            model.DeleteProcent = GetProcent(allCountUsers - activityCount - blockedCount, allCountUsers);
+
+            return model;
         }
 
         private async Task<IActionResult> ActionOnUsers(UsersViewModel model, Func<UserInfo, List<User>, bool> action)
@@ -145,20 +152,20 @@ namespace task4.Controllers
         }
 
         private bool IsUserActive()
-		{
-			var user = _dbContext.Users
-				.FirstOrDefault(u => u.UserName == User.Identity.Name &&
-				!u.IsBlocked &&
-				!u.IsDelete);
-
-			return !(user is null);
-		}
-
-		private string GetProcent(float usersCount, float allUsersCount)
         {
-			var maxProcent = 100f;
+            var user = _dbContext.Users
+                .FirstOrDefault(u => u.UserName == User.Identity.Name &&
+                !u.IsBlocked &&
+                !u.IsDelete);
 
-			return $"{usersCount / allUsersCount * maxProcent}%".Replace(',', '.');
-		}
-	}
+            return !(user is null);
+        }
+
+        private string GetProcent(float usersCount, float allUsersCount)
+        {
+            var maxProcent = 100f;
+
+            return $"{usersCount / allUsersCount * maxProcent}%".Replace(',', '.');
+        }
+    }
 }

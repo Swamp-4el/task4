@@ -13,101 +13,101 @@ using task4.Services;
 
 namespace task4.Controllers
 {
-	public class AccountController : Controller
-	{
-		private readonly Task4Context _dbContext;
+    public class AccountController : Controller
+    {
+        private readonly Task4Context _dbContext;
 
-		private readonly IHashingService _hashingService;
+        private readonly IHashingService _hashingService;
 
-		public AccountController(Task4Context dbContext, IHashingService hashingService)
-		{
-			_dbContext = dbContext;
-			_hashingService = hashingService;
-		}
+        public AccountController(Task4Context dbContext, IHashingService hashingService)
+        {
+            _dbContext = dbContext;
+            _hashingService = hashingService;
+        }
 
-		[HttpGet]
-		public IActionResult Login()
-		{
-			if (User.Identity.IsAuthenticated) RedirectToAction("Index", "Users");
+        [HttpGet]
+        public IActionResult Login()
+        {
+            if (User.Identity.IsAuthenticated) RedirectToAction("Index", "Users");
 
-			return View();
-		}
+            return View();
+        }
 
-		[HttpGet]
-		public IActionResult Registration()
-		{
-			if (User.Identity.IsAuthenticated) RedirectToAction("Index", "Users");
+        [HttpGet]
+        public IActionResult Registration()
+        {
+            if (User.Identity.IsAuthenticated) RedirectToAction("Index", "Users");
 
-			return View();
-		}
+            return View();
+        }
 
-		[HttpPost]
-		public async Task<IActionResult> Login(LoginViewModel model)
-		{
-			if (!ModelState.IsValid)
-				return View(model);
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
 
-			var hashPassword = _hashingService.GetHashString(model.Password);
+            var hashPassword = _hashingService.GetHashString(model.Password);
 
-			var user = _dbContext.Users.FirstOrDefault(u =>
-				u.UserName == model.UserName &&
-				!u.IsDelete);
+            var user = _dbContext.Users.FirstOrDefault(u =>
+                u.UserName == model.UserName &&
+                !u.IsDelete);
 
-			if (user != null && user.Password == hashPassword && !user.IsBlocked)
-			{
-				await Authenticate(model.UserName);
+            if (user != null && user.Password == hashPassword && !user.IsBlocked)
+            {
+                await Authenticate(model.UserName);
                 user.LastLogin = DateTime.Now;
 
-				return RedirectToAction("Index", "Users");
-			}
+                return RedirectToAction("Index", "Users");
+            }
 
             AddModelState(user, hashPassword);
 
             return View(model);
-		}
+        }
 
-		[HttpPost]
-		public async Task<IActionResult> Registration(RegistrationViewModel model)
-		{
-			if (!ModelState.IsValid) 
+        [HttpPost]
+        public async Task<IActionResult> Registration(RegistrationViewModel model)
+        {
+            if (!ModelState.IsValid) 
                 return View(model);
 
-			var user = _dbContext.Users
-				.FirstOrDefault(u => u.UserName == model.UserName && !u.IsDelete);
+            var user = _dbContext.Users
+                .FirstOrDefault(u => u.UserName == model.UserName && !u.IsDelete);
 
-			if (user is null)
-			{
+            if (user is null)
+            {
                 await RegistrationUser(model);
 
-				return RedirectToAction("Index", "Users");
-			}
-			
-			ModelState.AddModelError("", "Such a user is already registered");
+                return RedirectToAction("Index", "Users");
+            }
 
-			return View(model);
+            ModelState.AddModelError("", "Such a user is already registered");
+
+            return View(model);
 		}
 
         public async Task<IActionResult> Logout()
-		{
-			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-			return RedirectToAction("Login", "Account");
-		}
+            return RedirectToAction("Login", "Account");
+        }
 
-		private async Task Authenticate(string userName)
-		{
-			var claims = new List<Claim>
-			{
-				new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
-			};
+        private async Task Authenticate(string userName)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
+            };
 
-			var id = new ClaimsIdentity(claims,
-										"ApplicationCookie",
-										ClaimsIdentity.DefaultNameClaimType,
-										ClaimsIdentity.DefaultRoleClaimType);
+            var id = new ClaimsIdentity(claims,
+                                        "ApplicationCookie",
+                                        ClaimsIdentity.DefaultNameClaimType,
+                                        ClaimsIdentity.DefaultRoleClaimType);
 
-			await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-										  new ClaimsPrincipal(id));
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                                        new ClaimsPrincipal(id));
         }
 
         private async Task RegistrationUser(RegistrationViewModel model)
